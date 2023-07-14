@@ -1,0 +1,268 @@
+---
+title: "Network and Predictive Analytics"
+date: "Oct 7, 2022"
+output: html_notebook
+---
+
+```{r}
+## Reset workspace, Set home directory for RStudio and load igraph package
+rm(list = ls())
+setwd('~/Desktop/Networks & Predictive Analytics/Project/')
+library(igraph)
+```
+
+```{r}
+## Load dataset
+de_edges = as.data.frame(read.csv('de_edges.csv', header = TRUE))
+de_nodes = as.data.frame(read.csv('de_nodes.csv', header = TRUE))
+
+engb_edges = as.data.frame(read.csv('ENGB_edges.csv', header = TRUE))
+engb_nodes = as.data.frame(read.csv('ENGB_nodes.csv', header = TRUE))
+
+es_edges = as.data.frame(read.csv('ES_edges.csv', header = TRUE))
+es_nodes = as.data.frame(read.csv('ES_nodes.csv', header = TRUE))
+
+fr_edges = as.data.frame(read.csv('FR_edges.csv', header = TRUE))
+fr_nodes = as.data.frame(read.csv('FR_nodes.csv', header = TRUE))
+
+ptbr_edges = as.data.frame(read.csv('PTBR_edges.csv', header = TRUE))
+ptbr_nodes = as.data.frame(read.csv('PTBR_nodes.csv', header = TRUE))
+
+ru_edges = as.data.frame(read.csv('RU_edges.csv', header = TRUE))
+ru_nodes = as.data.frame(read.csv('RU_nodes.csv', header = TRUE))
+
+all_edges = as.data.frame(read.csv('twitch_edges.csv', header = TRUE))
+all_nodes = as.data.frame(read.csv('twitch_nodes.csv', header = TRUE))
+```
+
+```{r}
+## Create igraph from data frame
+de_g <- graph_from_data_frame(de_edges, directed = FALSE, vertices = de_nodes)
+engb_g <- graph_from_data_frame(engb_edges, directed = FALSE, vertices = engb_nodes)
+es_g <- graph_from_data_frame(es_edges, directed = FALSE, vertices = es_nodes)
+fr_g <- graph_from_data_frame(fr_edges, directed = FALSE, vertices = fr_nodes)
+ptbr_g <- graph_from_data_frame(ptbr_edges, directed = FALSE, vertices = ptbr_nodes)
+ru_g <- graph_from_data_frame(ru_edges, directed = FALSE, vertices = ru_nodes)
+all_g <- graph_from_data_frame(all_edges, directed = FALSE, vertices = all_nodes)
+```
+
+```{r}
+## Generate network for twitch user network from different countries
+C_Names <- c("DE", "ENGB", "ES", "FR", "PTBR", "RU", "ALL")
+No_Nodes <- c(length(V(de_g)), length(V(engb_g)), length(V(es_g)), length(V(fr_g)), length(V(ptbr_g)), length(V(ru_g)), length(V(all_g)))
+No_Edges <- c(length(E(de_g)), length(E(engb_g)), length(E(es_g)), length(E(fr_g)), length(E(ptbr_g)), length(E(ru_g)), length(E(all_g)))
+NW_Diameter <- c(diameter(de_g), diameter(engb_g), diameter(es_g), diameter(fr_g), diameter(ptbr_g), diameter(ru_g), 'NA')
+NW_Avg_Dist <- c(mean_distance(de_g), mean_distance(engb_g), mean_distance(es_g), mean_distance(fr_g), mean_distance(ptbr_g), mean_distance(ru_g), 'NA')
+NW_Density <- c(edge_density(de_g), edge_density(engb_g), edge_density(es_g), edge_density(fr_g), edge_density(ptbr_g), edge_density(ru_g), 'NA')
+NW_Avg_Degree <- c(mean(degree(de_g)), mean(degree(engb_g)), mean(degree(es_g)), mean(degree(fr_g)), mean(degree(ptbr_g)), mean(degree(ru_g)), 'NA')
+NW_Cohesion <- c(cohesion(de_g), cohesion(engb_g), cohesion(es_g), cohesion(fr_g), cohesion(ptbr_g), cohesion(ru_g), 'NA')
+NW_Compactness <- c(mean(closeness(de_g)), mean(closeness(engb_g)), mean(closeness(es_g)), mean(closeness(fr_g)), mean(closeness(ptbr_g)), mean(closeness(ru_g)), 'NA')
+f_info <- data.frame(C_Names, No_Nodes, No_Edges, NW_Diameter, NW_Avg_Dist, NW_Density, NW_Avg_Degree, NW_Compactness)
+f_info
+```
+
+```{r}
+## Load dataset we are using to do Exploratory Network Analysis
+rm(list = ls())
+library(igraph)
+library("RColorBrewer")
+
+pal <- brewer.pal(12, 'Set3')
+pal2 <- brewer.pal(11, 'Spectral')
+
+ptbr_edges = as.data.frame(read.csv('PTBR_edges.csv', header = TRUE))
+ptbr_nodes = as.data.frame(read.csv('PTBR_nodes.csv', header = TRUE))
+
+ptbr_g <- graph_from_data_frame(ptbr_edges, directed = FALSE, vertices = ptbr_nodes)
+```
+
+```{r}
+## Display network(ptbr) info
+ptbr_g
+```
+
+```{r}
+## Display network before filtering
+plot(ptbr_g, layout=layout_with_kk, vertex.size= 5, vertex.label= NA, vertex.color = 'skyblue', main="Network Before Filtering")
+```
+
+```{r}
+## Display histogram of degree centrality before filtering
+hist(centralization.degree(ptbr_g, mode='all')$res, breaks = 100, xlab = 'Degree', ylab = 'Frequency', main = 'Histogram of Degree Centrality\n Before Filtering')
+```
+
+```{r}
+## We are only selecting top 100 streamers because otherwise graphs/visualization become to over-crowded and difficult to comprehend
+ptbr_nodes_min <- ptbr_nodes[order(-ptbr_nodes$views),][1:100,]
+ptbr_edges_min <- ptbr_edges[which(ptbr_edges$from %in% ptbr_nodes_min$id & ptbr_edges$to %in% ptbr_nodes_min$id),]
+```
+
+```{r}
+## Network with all vs top 100 users
+par(mfrow=c(1,2), mar=c(1,1,1,1))
+ptbr_g_min <- graph_from_data_frame(ptbr_edges_min, directed = FALSE, vertices = ptbr_nodes_min)
+plot(ptbr_g, layout=layout_with_kk, vertex.size= 5, vertex.label= NA, vertex.color = 'skyblue', main="Network Before Filtering")
+plot(ptbr_g_min, layout=layout_with_kk, vertex.size= 8, vertex.label= NA, vertex.color= 'skyblue', main="Network After Filtering")
+```
+
+```{r}
+## Display node information for final dataset
+as_data_frame(ptbr_g_min, what="vertices")
+```
+
+```{r}
+## Network stats for final dataset
+ptbr_colnames <- c("Size", "No_Edges", "Diameter", "Average Distance", "Degree Centrality", "SD Degree Centrality", "Closeness Centrality", "SD Closeness Centrality", "Betweenness Centrality", "SD Betweenness Centrality", "Density", "Average Degree", "Cohesion", "Compactness", "Clustering Coefficient")
+
+ptbr_values <- c(length(V(ptbr_g_min)), length(E(ptbr_g_min)), diameter(ptbr_g_min), mean_distance(ptbr_g_min), centralization.degree(ptbr_g_min)$centralization, sd(centralization.degree(ptbr_g_min)$res), centralization.closeness(ptbr_g_min)$centralization, sd(centralization.closeness(ptbr_g_min)$res), centralization.betweenness(ptbr_g_min)$centralization, sd(centralization.betweenness(ptbr_g_min)$res), edge_density(ptbr_g_min), mean(degree(ptbr_g_min)), cohesion(ptbr_g_min), mean(closeness(ptbr_g_min)), transitivity(ptbr_g_min,type="global"))
+ptbr_info <- data.frame(ptbr_colnames, ptbr_values)
+colnames(ptbr_info) <- c('Metric','Values')
+ptbr_info
+```
+
+```{r}
+## Histogram of degree centrality before and after filtering
+par(mfrow=c(1,2), mar=c(2,2,2,2))
+hist(centralization.degree(ptbr_g, mode='all')$res, breaks = 100, xlab = 'Degree', ylab = 'Frequency', main = 'Histogram of Degree Centrality\n Before Filtering')
+hist(centralization.degree(ptbr_g_min, mode='all')$res, breaks = 100, xlab = 'Degree', ylab = 'Frequency', main = 'Histogram of Degree Centrality\n After Filtering')
+```
+
+```{r}
+## Clusters after using different community detection algorithms
+set.seed(1000)
+par(mfrow = c(1, 2), mar = c(2, 2, 2, 2))
+c_g2 <- fastgreedy.community(ptbr_g_min)
+res_g2 <- simplify(contract(ptbr_g_min, membership(c_g2)), remove.multiple = TRUE, remove.loops = TRUE)
+plot(res_g2, vertex.size= 10, vertex.label = NA, layout=layout_with_kk, vertex.color=pal, main="FastGreedy Community")
+
+c_g3 <- cluster_louvain(ptbr_g_min)
+res_g3 <- simplify(contract(ptbr_g_min, membership(c_g3)), remove.multiple = TRUE, remove.loops = TRUE)
+#plot(res_g3, vertex.size= 10, vertex.label = NA, main = length(res_g3), layout=layout_with_kk, vertex.color=pal)
+
+c_g4 <- spinglass.community(ptbr_g_min)
+res_g4 <- simplify(contract(ptbr_g_min, membership(c_g4)), remove.multiple = TRUE, remove.loops = TRUE)
+plot(res_g4, vertex.size= 10, vertex.label = NA, main = "Spinglass Community", layout=layout_with_kk, vertex.color=pal)
+
+c_g5 <- walktrap.community(ptbr_g_min)
+res_g5 <- simplify(contract(ptbr_g_min, membership(c_g5)), remove.multiple = TRUE, remove.loops = TRUE)
+#plot(res_g5, vertex.size= 10, vertex.label = NA, main = length(res_g5), layout=layout_with_kk, vertex.color=pal)
+```
+
+```{r}
+## Display number of nodes in each community for FastGreedy algo
+c_g_groups2 <- groups(c_g2)
+sort(lengths(c_g_groups2), decreasing = TRUE)
+```
+
+```{r}
+## Display number of nodes in each community for SpinGlass algo
+c_g_groups4 <- groups(c_g4)
+sort(lengths(c_g_groups4), decreasing = TRUE)
+```
+
+```{r}
+## Display network nodes with assigned communities using FastGreedy and SpinGlass community detection algo's
+par(mfrow = c(1, 2), mar = c(2, 2, 2, 2))
+plot(ptbr_g_min, vertex.color=pal[membership(c_g2)], layout=layout_with_kk, vertex.size= 10, vertex.label.cex = 0.5, main="Fast Greedy Community")
+plot(ptbr_g_min, vertex.color=pal[membership(c_g4)], layout=layout_with_kk, vertex.size= 10, vertex.label.cex = 0.5, main="SpinGlass Community")
+```
+
+```{r}
+## 3D visualization of FastGreedy algo
+library(threejs)
+
+net <- ptbr_g_min
+V(net)$color <- pal[membership(c_g2)]
+V(net)$size <- 5
+E(net)$color = 'black'
+
+graphjs(net, showLabels = T)
+```
+
+```{r}
+## 3D visualization of SpinGlass algo
+library(threejs)
+
+net <- ptbr_g_min
+V(net)$color <- pal[membership(c_g4)]
+V(net)$size <- 5
+E(net)$color = 'black'
+
+graphjs(net, showLabels = T)
+```
+
+```{r}
+## Identify and display top 10 nodes with highest degree centrality and their connectivity
+par(mfrow=c(1,2), mar=c(1,1,1,1))
+ptbr_g_min_dcent <- delete_vertices(ptbr_g_min, "ptbr_382")
+
+V(ptbr_g_min_dcent)$dcent <- centralization.degree(ptbr_g_min_dcent)$res
+V(ptbr_g_min_dcent)$color <- ifelse(V(ptbr_g_min_dcent)$dcent > 49, pal2, 'white')
+
+ptbr_g_min_dcent_tt <- induced_subgraph(ptbr_g_min_dcent, V(ptbr_g_min_dcent)[which(V(ptbr_g_min_dcent)$dcent > 49)])
+
+plot(ptbr_g_min_dcent, vertex.size=V(ptbr_g_min_dcent)$dcent*0.25, vertex.label= NA, layout=layout_with_fr, main="Degree Centrality")
+
+plot(ptbr_g_min_dcent_tt, vertex.label.cex= 1, vertex.size=V(ptbr_g_min_dcent_tt)$dcent*0.30, layout=layout_with_fr, main="Degree Centrality for Top 11")
+```
+
+```{r}
+## Identify and display top 10 nodes with highest Eigen-Vector centrality and their connectivity
+par(mfrow=c(1,2), mar=c(1,1,1,1))
+ptbr_g_min_evcent <- delete_vertices(ptbr_g_min, "ptbr_382")
+
+V(ptbr_g_min_evcent)$evcent <- eigen_centrality(ptbr_g_min_evcent)$vector
+V(ptbr_g_min_evcent)$color <- ifelse(V(ptbr_g_min_evcent)$evcent > 0.8589211, pal2, 'white')
+
+ptbr_g_min_evcent_tt <- induced_subgraph(ptbr_g_min_evcent, V(ptbr_g_min_evcent)[which(V(ptbr_g_min_evcent)$evcent > 0.8589211)])
+
+plot(ptbr_g_min_evcent, vertex.size=V(ptbr_g_min_evcent)$evcent*15, vertex.label= NA, edge.arrow.size=.4, layout=layout_with_fr, main="EigenVector Centrality")
+
+plot(ptbr_g_min_evcent_tt, vertex.size=V(ptbr_g_min_evcent_tt)$evcent*20, vertex.label.cex= 1, layout=layout_with_fr, main="EigenVector Centrality for Top 10")
+```
+
+```{r}
+## Identify and display top 10 nodes with highest Closeness centrality and their connectivity
+par(mfrow=c(1,2), mar=c(1,1,1,1))
+ptbr_g_min_ccent <- delete_vertices(ptbr_g_min, "ptbr_382")
+
+V(ptbr_g_min_ccent)$ccent <- centralization.closeness(ptbr_g_min_ccent)$res
+V(ptbr_g_min_ccent)$color <- ifelse(V(ptbr_g_min_ccent)$ccent > 0.6666667, pal2, 'white')
+
+ptbr_g_min_ccent_tt <- induced_subgraph(ptbr_g_min_ccent, V(ptbr_g_min_ccent)[which(V(ptbr_g_min_ccent)$ccent > 0.6666667)])
+
+plot(ptbr_g_min_ccent, vertex.size=V(ptbr_g_min_ccent)$ccent*15, vertex.label= NA, edge.arrow.size=.4, layout=layout_with_fr, main="Closeness Centrality")
+
+plot(ptbr_g_min_ccent_tt, vertex.size=V(ptbr_g_min_ccent_tt)$ccent*30, vertex.label.cex= 1, layout=layout_with_fr, main="Closeness Centrality for Top 11")
+```
+
+```{r}
+## Graph of nodes with highest betweenness centrality
+ptbr_g_min_bcent <- delete_vertices(ptbr_g_min, "ptbr_382")
+
+g.mat <- as.matrix(get.adjacency(ptbr_g_min_bcent))
+g.bc <- sna::betweenness(g.mat)
+plot(ptbr_g_min_bcent, vertex.color= "skyblue", vertex.size=g.bc*0.05, vertex.label= NA, layout=layout_with_fr, main="Betweenness Centrality")
+```
+
+```{r}
+## Identify Key-Players in network
+library(keyplayer)
+ptbr_g_min_am <- as.matrix(get.adjacency(ptbr_g_min))
+ptbr_g_min_fragment <- kpset(ptbr_g_min_am, size = 10, type = "fragment")
+V(ptbr_g_min)$color <- "skyblue"
+V(ptbr_g_min)$color[ptbr_g_min_fragment$keyplayers] <- "salmon"
+plot(ptbr_g_min, mark.groups = ptbr_g_min_fragment$keyplayers, mark.col = NA, mark.border = "black",
+    vertex.size = 10, vertex.label.cex = 0.3, vertex.label.color = "black",
+    edge.arrow.size = 0.25, layout = layout_with_kk, main = "Network w/ Key Players")
+```
+
+```{r}
+## REGE plot for network
+library(blockmodeling)
+rege2<-REGE.ownm.for(M=ptbr_g_min_am)$E 
+clu <- cutree(hclust(d=as.dist(1-rege2),method="ward.D"), k=3)
+V(ptbr_g_min)[names(clu)]$color <- clu
+plot(ptbr_g_min, vertex.color=V(ptbr_g_min)$color, vertex.size=10, vertex.label.cex=0.01, main = "Twitch PTBR top 100 Streamers REGE plot")
+```
+
