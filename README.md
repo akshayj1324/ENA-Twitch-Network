@@ -23,10 +23,10 @@ The purpose of this project is evaluate and explore the network, learn about its
   * For exploration we are only focusing on twitch streamers from Portuguese Brazilian speaking community.
 * **Data Preparation:** Further for the visualization and marketing purposes we are focusing on Top 100 Streamers from Portuguese Brazilian speaking community.
 * **Focus of Analysis:**
-  * Topographical Measures like Network Size, Diameter, Anerage Distance.
-  * Interconnectedness Measures like Density, Average Degree, Cohesion.
-  * Sub-Group Measures like Community Detection.
-  * Centrality Measures like Degree Centrality, Eigenvector Centrality, Closeness Centrality, Betweenness Centrality.
+  * Topographical Measures.
+  * Interconnectedness Measures.
+  * Sub-Group Measures.
+  * Centrality Measures.
   * Brokerage in the Network.
 
 ## Needs of this project
